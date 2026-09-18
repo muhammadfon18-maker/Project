@@ -5,12 +5,12 @@ import (
 	"net/http"
 )
 
-var UserNotFound = errors.New("The user is not found")
+var UserNotFound = errors.New("user is not found")
 
-var CarNotFound = errors.New("The car is not found")
+var CarNotFound = errors.New("car is not found")
 
-var Invalid = errors.New("Invalid operation")
+var Invalid = errors.New("invalid operation")
 
-func Error(w http.ResponseWriter, err error, status int) {
+func WriteError(w http.ResponseWriter, err error, status int) {
 	http.Error(w, err.Error(), status)
 }

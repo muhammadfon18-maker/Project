@@ -17,11 +17,11 @@ type Service struct {
 }
 
 type Storer interface {
-	Create(firstName, lastName, phone string, car []storage.CarDTO) (storage.User, error)
-	Get(id string) (storage.User, error)
-	GetAll() []storage.User
-	Update(id,  firstName, lastName, phone string, car []storage.CarDTO) (storage.User, error)
-	Delete(id string) error
+	CreateUser(firstName, lastName, phone string, car []storage.CarDTO) (storage.User, error)
+	GetUserById(id string) (storage.User, error)
+	GetUsers() []storage.User
+	UpdateUser(id, firstName, lastName, phone string, car []storage.CarDTO) (storage.User, error)
+	DeleteUser(id string) error
 }
 
 func NewService(storage storage.Storager) (Storer, error) {
@@ -38,7 +38,7 @@ func NewService(storage storage.Storager) (Storer, error) {
 
 }
 
-func (s *Service) Create(
+func (s *Service) CreateUser(
 	firstName,
 	lastName,
 	phone string,
@@ -68,10 +68,10 @@ func (s *Service) Create(
 
 	for _, carDTO := range car {
 		usersCar = append(usersCar, storage.Car{
-			ID:       uuid.New().String(),
-			Model:    carDTO.Model,
-			Car_type: carDTO.Car_type,
-			User_id:  id_user,
+			ID:      uuid.New().String(),
+			Model:   carDTO.Model,
+			CarType: carDTO.Car_type,
+			UserId:  id_user,
 		})
 	}
 
@@ -79,33 +79,26 @@ func (s *Service) Create(
 
 	newUser := storage.User{
 
-		ID:         id_user,
-		FirstName:  firstName,
-		LastName:   lastName,
-		Phone:      phone,
-		Created_at: timeNow,
-		Updated_at: timeNow,
-		Car:        usersCar,
+		ID:        id_user,
+		FirstName: firstName,
+		LastName:  lastName,
+		Phone:     phone,
+		CreatedAt: timeNow,
+		UpdatedAt: timeNow,
+		Car:       usersCar,
 	}
 
-	UsetToSave := make([]storage.User, 0)
+	s.users = append(s.users, newUser)
 
-	UsetToSave = append(UsetToSave, s.users...)
-
-	UsetToSave = append(UsetToSave, newUser)
-
-	//if save is fall we make it to avoid несоотвествие с паматю
-	err := s.storage.Save(UsetToSave)
+	err := s.storage.Save(s.users)
 	if err != nil {
 		return storage.User{}, fmt.Errorf("failed to save user :%w ", err)
 	}
 
-	s.users = UsetToSave
-
 	return newUser, nil
 
 }
-func (s *Service) Get(id string) (storage.User, error) {
+func (s *Service) GetUserById(id string) (storage.User, error) {
 
 	uuid, err := uuid.Parse(id)
 	if err != nil {
@@ -122,13 +115,13 @@ func (s *Service) Get(id string) (storage.User, error) {
 
 }
 
-func (s *Service) GetAll() []storage.User {
+func (s *Service) GetUsers() []storage.User {
 	return s.users
 }
 
-func (s *Service) Update(
+func (s *Service) UpdateUser(
 	id,
-	 firstName,
+	firstName,
 	lastName,
 	phone string,
 	cars []storage.CarDTO) (storage.User, error) {
@@ -140,6 +133,7 @@ func (s *Service) Update(
 			s.users[i].FirstName = firstName
 			s.users[i].LastName = lastName
 			s.users[i].Phone = phone
+			s.users[i].UpdatedAt = time.Now()
 
 			for _, carDTO := range cars {
 
@@ -148,7 +142,7 @@ func (s *Service) Update(
 				for j, car := range s.users[i].Car {
 					if car.ID == carDTO.CarDTO_ID {
 						s.users[i].Car[j].Model = carDTO.Model
-						s.users[i].Car[j].Car_type = carDTO.Car_type
+						s.users[i].Car[j].CarType = carDTO.Car_type
 
 						found = true
 						break
@@ -164,11 +158,10 @@ func (s *Service) Update(
 					)
 				}
 
-				err := s.storage.Save(s.users)
-				if err != nil {
-					return storage.User{}, fmt.Errorf("failed to save user :%w ", err)
-
-				}
+			}
+			err := s.storage.Save(s.users)
+			if err != nil {
+				return storage.User{}, fmt.Errorf("failed to save user :%w ", err)
 
 			}
 			return s.users[i], nil
@@ -184,7 +177,7 @@ func (s *Service) Update(
 
 }
 
-func (s *Service) Delete(id string) error {
+func (s *Service) DeleteUser(id string) error {
 
 	found := false
 
@@ -206,3 +199,14 @@ func (s *Service) Delete(id string) error {
 	return nil
 
 }
+
+// save
+
+/* UsetToSave := make([]storage.User, 0)
+
+UsetToSave = append(UsetToSave, s.users...)
+
+UsetToSave = append(UsetToSave, newUser)
+
+
+	s.users = UsetToSave */

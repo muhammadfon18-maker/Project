@@ -22,26 +22,26 @@ func (h *HttpService) HttpCreate(w http.ResponseWriter, r *http.Request) {
 	var DTO storage.UserDTO
 
 	if err := json.NewDecoder(r.Body).Decode(&DTO); err != nil {
-		helper.Error(w, err, http.StatusBadRequest)
+		helper.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.service.Create(
-		DTO.FirstName, 
-		DTO.LastName, 
-		DTO.Phone, 
+	user, err := h.service.CreateUser(
+		DTO.FirstName,
+		DTO.LastName,
+		DTO.Phone,
 		DTO.CarDTO)
 	if err != nil {
-		helper.Error(w, err, http.StatusInternalServerError)
+		helper.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 
 	if err = json.NewEncoder(w).Encode(user); err != nil {
-		helper.Error(w, err, http.StatusInternalServerError)
+		helper.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -51,9 +51,9 @@ func (h *HttpService) HttpGet(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 
-	user, err := h.service.Get(id)
+	user, err := h.service.GetUserById(id)
 	if err != nil {
-		helper.Error(w, err, http.StatusBadRequest)
+		helper.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -62,21 +62,21 @@ func (h *HttpService) HttpGet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if err = json.NewEncoder(w).Encode(user); err != nil {
-		helper.Error(w, err, http.StatusInternalServerError)
+		helper.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 }
 
 func (h *HttpService) HttpGetAll(w http.ResponseWriter, r *http.Request) {
-	users := h.service.GetAll()
+	users := h.service.GetUsers()
 
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(users); err != nil {
-		helper.Error(w, err, http.StatusInternalServerError)
+		helper.WriteError(w, err, http.StatusInternalServerError)
 		return
 	}
 }
@@ -85,16 +85,14 @@ func (h *HttpService) HttpUpdate(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 
-	
-
 	var DTO storage.UserDTO
 
 	if err := json.NewDecoder(r.Body).Decode(&DTO); err != nil {
-		helper.Error(w, err, http.StatusBadRequest)
+		helper.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.service.Update(
+	user, err := h.service.UpdateUser(
 		id,
 		DTO.FirstName,
 		DTO.LastName,
@@ -104,12 +102,12 @@ func (h *HttpService) HttpUpdate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, helper.UserNotFound) ||
 			errors.Is(err, helper.CarNotFound) {
-			helper.Error(w, err, http.StatusNotFound)
+			helper.WriteError(w, err, http.StatusNotFound)
 			return
 
 		}
 
-		helper.Error(w, err, http.StatusInternalServerError)
+		helper.WriteError(w, err, http.StatusInternalServerError)
 		return
 
 	}
@@ -118,21 +116,24 @@ func (h *HttpService) HttpUpdate(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(w).Encode(user)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		helper.WriteError(w, err, http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *HttpService) HttpDelete(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 
-	err := h.service.Delete(id)
+	err := h.service.DeleteUser(id)
 	if err != nil {
 		if errors.Is(err, helper.UserNotFound) {
-			helper.Error(w, err, http.StatusNotFound)
+			helper.WriteError(w, err, http.StatusNotFound)
 			return
 		}
 
-		helper.Error(w, err, http.StatusInternalServerError)
+		helper.WriteError(w, err, http.StatusInternalServerError)
 		return
 
 	}

@@ -45,7 +45,7 @@ func (s FileStorage) Load() ([]User, error) {
 	b, err := os.ReadFile(s.filepath)
 
 	if err != nil {
-		if os.IsNotExist(err){
+		if os.IsNotExist(err) {
 			return []User{}, nil
 		}
 		return []User{}, fmt.Errorf("could not read file : %s %w ", s.filepath, err)
